@@ -101,22 +101,47 @@ def api_retrieve(city_id) -> str:
     resp = Response(json_result, status=200, mimetype='application/json')
     return resp
 
-
-@app.route('/api/v1/cities/', methods=['POST'])
-def api_add() -> str:
-    resp = Response(status=201, mimetype='application/json')
-    return resp
-
-
 @app.route('/api/v1/cities/<int:city_id>', methods=['PUT'])
 def api_edit(city_id) -> str:
+    cursor = mysql.get_db().cursor()
+    content = request.json
+    inputData = (content['LatD'], content['LatM'], content['LatS'],
+                 content['NS'], content['LonD'],
+                 content['LonM'], content['LonS'], content['EW'], content['City'],
+                 content['State'], city_id)
+    sql_update_query = """UPDATE tblCitiesImport t SET t.LatD = %s, t.LatM = %s, t.LatS = %s, t.NS = %s, t.LonD = %s,
+     t.LonM = %s, t.LonS = %s, t.EW = %s, t.City = %s, t.State = %s WHERE t.id = %s """
+    cursor.execute(sql_update_query, inputData)
+    mysql.get_db().commit()
+    resp = Response(status=200, mimetype='application/json')
+    return resp
+
+
+@app.route('/api/v1/cities', methods=['POST'])
+def api_add() -> str:
+
+    content = request.json
+
+    cursor = mysql.get_db().cursor()
+    inputData = (content['LatD'], content['LatM'], content['LatS'],
+                 content['NS'], content['LonD'],
+                 content['LonM'], content['LonS'], content['EW'], content['City'], request.form.get('State'))
+    sql_insert_query = """INSERT INTO tblCitiesImport (LatD,LatM,LatS,NS,LonD,LonM,LonS,EW,City,State)
+    VALUES (%s, %s,%s, %s,%s, %s,%s, %s,%s, %s) """
+    cursor.execute(sql_insert_query, inputData)
+    mysql.get_db().commit()
     resp = Response(status=201, mimetype='application/json')
     return resp
 
 
-@app.route('/api/cities/<int:city_id>', methods=['DELETE'])
+
+@app.route('/api/v1/cities/<int:city_id>', methods=['DELETE'])
 def api_delete(city_id) -> str:
-    resp = Response(status=210, mimetype='application/json')
+    cursor = mysql.get_db().cursor()
+    sql_delete_query = """DELETE FROM tblCitiesImport WHERE id = %s """
+    cursor.execute(sql_delete_query, city_id)
+    mysql.get_db().commit()
+    resp = Response(status=200, mimetype='application/json')
     return resp
 
 
